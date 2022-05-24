@@ -38,6 +38,55 @@ def read_data_from_excelfile(path: str) -> dict:
     return df_dict
 
 
+def uppercase_cities(cities: list) -> list:
+    '''
+    Helper function to capitalize all cities in the input list.
+    
+    Parameters
+    ----------
+    cities : list
+            list of cities input by the user
+    
+    Returns
+    -------
+    cities : list
+            the same list is returned but each element has the .upper()
+            method applied to it
+    
+    '''
+    
+    return [city.upper() for city in cities]
+
+
+def common_df_reformatting(df: pd.DataFrame()) -> pd.DataFrame():
+    '''
+    Perform the same reformatting to every sheet in the excel file.
+    They all follow the same formatting. 
+    
+    Parameters
+    ----------
+    df: pd.DataFrame()
+            dataframe corresponding to one of the excel sheets from the
+            input data
+    
+    Returns
+    -------
+    df: pd.DataFrame()
+            the same dataframe with formatting applied
+    
+    '''
+    
+    df.drop(0, inplace=True) # for median rent dataframe only, no secondary indexing
+
+    # renaming column headers based on row below it
+    rename_mapper = dict()
+    for col in df.columns:
+        rename_mapper[col] = df[col].iloc[0]
+        
+    df.rename(columns=rename_mapper, inplace=True)    
+    df.drop(1, inplace=True) # resetting index once more. 
+    
+    return df
 
 
 def median_rent_YoY(df: pd.DataFrame(), 
@@ -67,36 +116,32 @@ def median_rent_YoY(df: pd.DataFrame(),
     
     '''
     
-    # df = data['Median Rent_YoY (%)']    
-    name_of_sheet = df.iloc[0,0]
-
-    df.drop(0, inplace=True) # for median rent dataframe only, no secondary indexing
-
-    # renaming column headers based on row below it
-    rename_mapper = dict()
-    for col in df.columns:
-        rename_mapper[col] = df[col].iloc[0]
-        
-    df.rename(columns=rename_mapper, inplace=True)    
-    df.drop(1, inplace=True) # resetting index once more. 
-
-    df.set_index('Largest 100 Cities', inplace=True)
-    for city in cities:    
-        df.loc[city].plot(label=city)
-        
-    plt.xlabel('date')
-    plt.ylabel('percent (%) change')
-    plt.title(f'{name_of_sheet}')
-    plt.legend()
+    cities = uppercase_cities(cities)  # all cities in list uppercased
+    name_of_sheet = df.iloc[0,0]  # 'Median Rent_YoY (%)'
+    common_df_reformatting(df)  # perform data reformatting. Done 'inplace'
+    df.set_index('Largest 100 Cities', inplace=True)  # sheet specific
+    
+    if plot:
+        for city in cities:    
+            df.loc[city].plot(label=city)
+            
+        plt.xlabel('date')
+        plt.ylabel('percent (%) change')
+        plt.title(f'{name_of_sheet}')
+        plt.legend()
 
     
     return df
 
 
-
-
-
-
+if __name__ == '__main__':
+    import os
+    
+    folder_path = os.getcwd() + '/data/Rent_Data_March2022_.xlsx'
+    data = read_data_from_excelfile(folder_path)
+    city = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
+    
+    median_rent_YoY(df=data['Median Rent_YoY (%)'], cities=city, plot=True)
 
 
 
