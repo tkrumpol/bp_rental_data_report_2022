@@ -9,6 +9,8 @@ main function to examine bp rental data
 
 pandas 1.3.5 for reading .xlsx files. 
 
+Multiindexing Article:
+    https://towardsdatascience.com/how-to-use-multiindex-in-pandas-to-level-up-your-analysis-aeac7f451fce
 
 Notes:
     - Cities are in all caps
@@ -61,3 +63,32 @@ df = data['Median Rent by Bedrooms']
 
 name_of_sheet = df.iloc[0,0]
 common_df_reformatting(df)
+
+df.fillna(method='ffill', inplace=True)  # forward fill city names for multiindexing
+
+# creating multiindexing with city, #bedrooms. df already sorted but sort_index()
+# at the end is best practice for efficient lookup 
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/advanced.html 
+multi = df.set_index(['Largest 100 Cities', 'Number of Bedrooms']).sort_index()
+
+# plot pittsburgh one bedroom 
+# multi.loc[('PITTSBURGH, PA', '1')].plot()
+
+
+# multi.loc[('PITTSBURGH, PA', slice(None))]
+
+#                     2017-01-01  ...  2022-02-01
+# Number of Bedrooms              ...            
+# 1                        935.0  ...      1425.0
+# 2                       1150.0  ...      1575.0
+# 3                       1300.0  ...      1595.0
+
+# [3 rows x 62 columns]
+
+
+
+
+
+
+
+
