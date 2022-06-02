@@ -39,17 +39,26 @@ Sheet Names
 
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 
-from utils import (read_data_from_excelfile, median_rent_YoY,
-                   common_df_reformatting)
+
+from utils import (read_data_from_excelfile, plot_median_rent_YoY,
+                   format_data)
+from type_checking import is_list_type
 
 
 folder_path = os.getcwd() + '/data/Rent_Data_March2022_.xlsx'
 data = read_data_from_excelfile(folder_path)
+formatted_data = format_data(data)
 
-
+# testing
 city = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
+city = ['PITTSBURGH, PA',] # all caps
+city = 'PITTSBURGH, PA' # all caps
 
+num_bedrooms = ['1']
+num_bedrooms = ['1','2']
+num_bedrooms = '1'
 
 #=====================================================
 # Working with median rent by bedrooms
@@ -59,36 +68,61 @@ city = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
 # - input cities and # br, return plot with those cities and specification
 #=====================================================
 
-df = data['Median Rent by Bedrooms']
-
-name_of_sheet = df.iloc[0,0]
-common_df_reformatting(df)
-
-df.fillna(method='ffill', inplace=True)  # forward fill city names for multiindexing
-
-# creating multiindexing with city, #bedrooms. df already sorted but sort_index()
-# at the end is best practice for efficient lookup 
-# https://pandas.pydata.org/pandas-docs/stable/user_guide/advanced.html 
-multi = df.set_index(['Largest 100 Cities', 'Number of Bedrooms']).sort_index()
+df = formatted_data['Median Rent by Bedrooms']
 
 # plot pittsburgh one bedroom 
-# multi.loc[('PITTSBURGH, PA', '1')].plot()
+# df.loc[('PITTSBURGH, PA', '1')].plot()
+
+split_by_city = df.loc[(city, slice(None)),:]
+split_by_bedroom = df.loc[(slice(None), slice(num_bedrooms)),:]
+split_by_city_and_bedroom = df.loc[(city, slice(num_bedrooms)),:]
 
 
-# multi.loc[('PITTSBURGH, PA', slice(None))]
+# IDEA
+# Use logic to test length of list of cities passed. If its one, then plot
+# all bedrooms on one plot. If greater than one, separate out the plots
+# but bedroom and city. This condenses the two functions to one. 
 
-#                     2017-01-01  ...  2022-02-01
-# Number of Bedrooms              ...            
-# 1                        935.0  ...      1425.0
-# 2                       1150.0  ...      1575.0
-# 3                       1300.0  ...      1595.0
+def bedroom_info_for_given_city(multi: pd.DataFrame(),
+                                city: list,
+                                plot: bool) -> pd.DataFrame():
+    
+    
+    city = is_list_type(city)
+    df_num_bedrooms_for_city = multi.loc[(city, slice(None))]
+    
+    if plot:
+        if len(city) == 1:
+            for row in df_num_bedrooms_for_city.iterrows():
+                row[1].plot(label=f'{row[0]} bedroom')
+            plt.xlabel('timeline')
+            plt.ylabel('Amount($)')
+            plt.title('Median rent by bedroom')
+            plt.legend()
+        
+        else:
+            # More than one city, create subplots.
+            for each_city in city:
+                city_df = df_num_bedrooms_for_city.loc[(each_city)]
+                plt.figure()
+                for row in city_df.iterrows():
+                    row[1].plot(label=f'{row[0]} bedroom')
+                plt.xlabel('timeline')
+                plt.ylabel('Amount($)')
+                plt.title('Median rent by bedroom: {each_city}')
+                plt.legend()
+            # fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
+            # fig.suptitle('Median rent by bedroom')
+            
+            # BO_model.results_dict['p_estimator'].Z.plot(ax=axes[0,0])
+            # axes[0,0].set_title('Unnoised State Profiles - Z')
+            
+            # BO_model.results_dict['p_estimator'].C.plot(ax=axes[0,1])
+            # axes[0,1].set_title('Noised Concentration Profiles - C')
+    
+    return df_num_bedrooms_for_city
 
-# [3 rows x 62 columns]
 
-
-
-
-
-
-
-
+bedroom_info_for_given_city(multi=split_by_bedroom,
+                            city=city,
+                            plot=True)
