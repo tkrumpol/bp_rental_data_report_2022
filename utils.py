@@ -8,6 +8,7 @@ Created on Fri May 13 18:07:05 2022
 
 import pandas as pd  # must be recent pandas version to read xlsx file
 import matplotlib.pyplot as plt
+from type_checking import is_list_type
 
 
 def read_data_from_excelfile(path: str) -> dict:
@@ -89,18 +90,58 @@ def common_df_reformatting(df: pd.DataFrame()) -> pd.DataFrame():
     return df
 
 
-def median_rent_YoY(df: pd.DataFrame(), 
-             cities: list,
-             plot: bool) -> pd.DataFrame():
+def format_data(data: dict()) -> dict():
     '''
-    Finction to take the last sheet, median rent YoY and organize and plot
-    some of the data/cities if specified. Could be pslit up into multiple
+    Format each of the data sheets into pandas dataframes where the index is
+    either the city name or a tuple(f1,f2) for multi indexed dfs. Here, 
+    f1 is always the city and f2 can either be number of bedrooms or housing
+    type. This is dependent on the excel sheet. 
+
+    Parameters
+    ----------
+    data : dict()
+        the read in excel sheet data where the keys are the name of the
+        excel sheet and the values are the data on the sheet
+
+    Returns
+    -------
+    dict()
+        the same keys. The values have been modified to be more pandas
+        frinedly formatted for lookup and plotting.
+
+    '''
+    
+    return_dict = dict()
+    for sheet, df in data.items():
+        common_df_reformatting(df)  # apply common reformatting to each sheet
+        if sheet == 'Median Rent_YoY (%)': 
+            df.set_index('Largest 100 Cities', inplace=True)  # only sheet with one column to index
+            return_dict[sheet] = df
+        else:
+            df.fillna(method='ffill', inplace=True)  # forward fill city names for multi-indexing
+            multi_indexing = list(df.columns[:2]) # the first two columns for multi-indexing
+            # df already sorted but sort_index()
+            # at the end is best practice for efficient lookup 
+            # https://pandas.pydata.org/pandas-docs/stable/user_guide/advanced.html 
+            multi = df.set_index(multi_indexing).sort_index()
+            return_dict[sheet] = multi
+    
+    return return_dict
+
+
+def plot_median_rent_YoY(df: pd.DataFrame(), 
+             cities: list()
+             ) -> pd.DataFrame():
+    '''
+    Function to take the last sheet, median rent YoY and organize and plot
+    some of the data/cities if specified. Could be split up into multiple
     functions. One to split one to plot. 
     
     Parameters
     ----------
     df : pd.DataFrame
-            the median rent YoY dataframe
+            the median rent YoY dataframe after format_data function
+            has been applied
     
     cities : list
             list of cities to plot the data from. 
@@ -116,21 +157,17 @@ def median_rent_YoY(df: pd.DataFrame(),
     
     '''
     
+    cities = is_list_type(cities)
     cities = uppercase_cities(cities)  # all cities in list uppercased
-    name_of_sheet = df.iloc[0,0]  # 'Median Rent_YoY (%)'
-    common_df_reformatting(df)  # perform data reformatting. Done 'inplace'
-    df.set_index('Largest 100 Cities', inplace=True)  # sheet specific
     
-    if plot:
-        for city in cities:    
-            df.loc[city].plot(label=city)
-            
-        plt.xlabel('date')
-        plt.ylabel('percent (%) change')
-        plt.title(f'{name_of_sheet}')
-        plt.legend()
+    for city in cities:    
+        df.loc[city].plot(label=city)
+        
+    plt.xlabel('timeline (years)')
+    plt.ylabel('percent (%) change')
+    plt.title('Median Rent_YoY (%)')
+    plt.legend()
 
-    
     return df
 
 
@@ -140,9 +177,11 @@ if __name__ == '__main__':
     folder_path = os.getcwd() + '/data/Rent_Data_March2022_.xlsx'
     data = read_data_from_excelfile(folder_path)
     city = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
+    # city = 'PITTSBURGH, PA' # all caps
     
-    median_rent_YoY(df=data['Median Rent_YoY (%)'], cities=city, plot=True)
-
+    formatted_data = format_data(data)
+    plot_median_rent_YoY(df=formatted_data['Median Rent_YoY (%)'],
+                         cities=city)
 
 
 
