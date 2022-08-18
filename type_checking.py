@@ -33,9 +33,9 @@ def is_list_type(obj) -> list():
     
     if isinstance(obj, str):
         obj = [obj]
-        print('''
+        print(f'''
               Input should be a list. Single object was detected as
-              type str() was converted to list(str()) i.e. [str]
+              type str() was converted to list(str()) i.e. {obj}
               ''')
     elif isinstance(obj, list):
         pass
