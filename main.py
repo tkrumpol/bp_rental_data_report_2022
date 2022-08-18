@@ -35,11 +35,17 @@ Sheet Names
 [ ] df = data['Median Rent by Type']
 [ ] df = data['Median Rent by Type YoY(%)']
 
+
+Take away some user abilities to choose and just create plots for them since
+we know there are only 3 choices for bedoom
+
+
 """
 
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+from math import ceil, floor
 
 
 from utils import (read_data_from_excelfile, plot_median_rent_YoY,
@@ -52,12 +58,12 @@ data = read_data_from_excelfile(folder_path)
 formatted_data = format_data(data)
 
 # testing
-city = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
-city = ['PITTSBURGH, PA',] # all caps
-city = 'PITTSBURGH, PA' # all caps
+cities = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
+# cities = ['PITTSBURGH, PA',] # all caps
+# cities = 'PITTSBURGH, PA' # all caps
 
 num_bedrooms = ['1']
-num_bedrooms = ['1','2']
+num_bedrooms = ['1','2', '3']
 num_bedrooms = '1'
 
 #=====================================================
@@ -73,9 +79,9 @@ df = formatted_data['Median Rent by Bedrooms']
 # plot pittsburgh one bedroom 
 # df.loc[('PITTSBURGH, PA', '1')].plot()
 
-split_by_city = df.loc[(city, slice(None)),:]
-split_by_bedroom = df.loc[(slice(None), slice(num_bedrooms)),:]
-split_by_city_and_bedroom = df.loc[(city, slice(num_bedrooms)),:]
+# split_by_city = df.loc[(cities, slice(None)),:]
+# split_by_bedroom = df.loc[(slice(None), slice(num_bedrooms)),:]
+# split_by_city_and_bedroom = df.loc[(cities, slice(num_bedrooms)),:]
 
 
 # IDEA
@@ -83,16 +89,97 @@ split_by_city_and_bedroom = df.loc[(city, slice(num_bedrooms)),:]
 # all bedrooms on one plot. If greater than one, separate out the plots
 # but bedroom and city. This condenses the two functions to one. 
 
+
+
+def split_by_cities(multiindex_df: pd.DataFrame(), cities: list()
+                    ) -> pd.DataFrame():
+    '''
+    Split a multi indexed df (City, num bedrooms) by cities
+
+    Parameters
+    ----------
+    multiindex_df : pd.DataFrame
+        the dataframe which is indexed by city and number of bedroomms
+    cities : list()
+        a list of cities to split the dataframe by
+
+    Returns
+    -------
+    split_df : pd.DataFrame()
+        the subset of the mutiindexed df now split by input cities
+
+    '''
+    
+    split_df = multiindex_df.loc[(cities, slice(None)),:]
+    
+    return split_df
+
+
+def split_by_bedroom(multiindex_df: pd.DataFrame(), num_bedrooms: str()
+                     ) -> pd.DataFrame():
+    '''
+    Split a multi indexed df (City, num bedrooms) by bedroom
+
+    Parameters
+    ----------
+    multiindex_df : pd.DataFrame
+        the dataframe which is indexed by city and number of bedroomms
+    cities : list()
+        a list of cities to split the dataframe by
+    num_bedrooms : str()
+        either 1, 2, or 3 bedrooms
+
+    Returns
+    -------
+    split_df : pd.DataFrame()
+        the subset of the mutiindexed df now split by input cities
+
+    ''' 
+    
+    split_df = multiindex_df.loc[(slice(None), slice(num_bedrooms)),:]
+    
+    return split_df
+
+
+def split_by_cities_and_bedroom(multiindex_df: pd.DataFrame(), cities: list(),
+                                num_bedrooms: str()) -> pd.DataFrame():
+
+    '''
+    Split a multi indexed df (City, num bedrooms) by cities and bedroom    
+
+    Parameters
+    ----------
+    multiindex_df : pd.DataFrame
+        the dataframe which is indexed by city and number of bedroomms
+    cities : list()
+        a list of cities to split the dataframe by
+    num_bedrooms : str()
+        either 1, 2, or 3 bedrooms
+
+    Returns
+    -------
+    split_df : pd.DataFrame()
+        the subset of the mutiindexed df now split by input cities
+
+    '''
+
+    
+    split_df = multiindex_df.loc[(cities, slice(num_bedrooms)),:]
+    
+    return split_df
+
+
 def bedroom_info_for_given_city(multi: pd.DataFrame(),
-                                city: list,
+                                cities: list,
                                 plot: bool) -> pd.DataFrame():
     
     
-    city = is_list_type(city)
-    df_num_bedrooms_for_city = multi.loc[(city, slice(None))]
+    cities = is_list_type(cities)
+    df_num_bedrooms_for_city = split_by_cities(multiindex_df=multi,
+                                               cities=cities)
     
     if plot:
-        if len(city) == 1:
+        if len(cities) == 1:
             for row in df_num_bedrooms_for_city.iterrows():
                 row[1].plot(label=f'{row[0]} bedroom')
             plt.xlabel('timeline')
@@ -102,27 +189,32 @@ def bedroom_info_for_given_city(multi: pd.DataFrame(),
         
         else:
             # More than one city, create subplots.
-            for each_city in city:
-                city_df = df_num_bedrooms_for_city.loc[(each_city)]
-                plt.figure()
-                for row in city_df.iterrows():
-                    row[1].plot(label=f'{row[0]} bedroom')
-                plt.xlabel('timeline')
-                plt.ylabel('Amount($)')
-                plt.title('Median rent by bedroom: {each_city}')
-                plt.legend()
-            # fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
-            # fig.suptitle('Median rent by bedroom')
+            num_figs = len(cities)
+            num_cols = num_figs
+            num_rows = 1  # ceil(num_figs/num_cols)
+
+            fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, 
+                                     figsize=(12, 8))
+            fig.suptitle('Median rent by bedroom')
             
-            # BO_model.results_dict['p_estimator'].Z.plot(ax=axes[0,0])
-            # axes[0,0].set_title('Unnoised State Profiles - Z')
+            col = 0
+        
+            for city in cities:
+                city_df = df_num_bedrooms_for_city.loc[(city)]
+                for row_info in city_df.iterrows():
+                    num_bdrms = row_info[0]
+                    data = row_info[1]
+                    data.plot(ax=axes[col], label=f'{num_bdrms} bedroom')
+                axes[col].set_xlabel('timeline')
+                axes[col].set_ylabel('Amount($)')
+                axes[col].set_title(f'Median rent by bedroom: {city}')
+                axes[col].legend()
             
-            # BO_model.results_dict['p_estimator'].C.plot(ax=axes[0,1])
-            # axes[0,1].set_title('Noised Concentration Profiles - C')
+                col += 1 
     
     return df_num_bedrooms_for_city
 
 
-bedroom_info_for_given_city(multi=split_by_bedroom,
-                            city=city,
+bedroom_info_for_given_city(multi=df,
+                            cities=cities,
                             plot=True)
