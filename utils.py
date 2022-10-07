@@ -111,12 +111,12 @@ def format_data(data: dict()) -> dict():
 
     '''
     
-    return_dict = dict()
+    formatted_data= dict()
     for sheet, df in data.items():
         common_df_reformatting(df)  # apply common reformatting to each sheet
         if sheet == 'Median Rent_YoY (%)': 
             df.set_index('Largest 100 Cities', inplace=True)  # only sheet with one column to index
-            return_dict[sheet] = df
+            formatted_data[sheet] = df
         else:
             df.fillna(method='ffill', inplace=True)  # forward fill city names for multi-indexing
             multi_indexing = list(df.columns[:2]) # the first two columns for multi-indexing
@@ -124,9 +124,14 @@ def format_data(data: dict()) -> dict():
             # at the end is best practice for efficient lookup 
             # https://pandas.pydata.org/pandas-docs/stable/user_guide/advanced.html 
             multi = df.set_index(multi_indexing).sort_index()
-            return_dict[sheet] = multi
+            formatted_data[sheet] = multi
     
-    return return_dict
+    # Type in excel sheet for Median Rent columns for 2021-02. In number and not date
+    # format, so assigning correct columns from another sheet to replace.
+    # All dates are the same for all sheets. 
+    formatted_data['Median Rent & Number of Listing'].columns = formatted_data['Median Rent by Bedrooms'].columns
+    
+    return formatted_data
 
 
 def plot_median_rent_YoY(df: pd.DataFrame(), 
@@ -160,6 +165,7 @@ def plot_median_rent_YoY(df: pd.DataFrame(),
     cities = is_list_type(cities)
     cities = uppercase_cities(cities)  # all cities in list uppercased
     
+    plt.figure()
     for city in cities:    
         df.loc[city].plot(label=city)
         
@@ -169,19 +175,3 @@ def plot_median_rent_YoY(df: pd.DataFrame(),
     plt.legend()
 
     return df
-
-
-if __name__ == '__main__':
-    import os
-    
-    folder_path = os.getcwd() + '/data/Rent_Data_March2022_.xlsx'
-    data = read_data_from_excelfile(folder_path)
-    city = ['PITTSBURGH, PA', 'ATLANTA, GA'] # all caps
-    # city = 'PITTSBURGH, PA' # all caps
-    
-    formatted_data = format_data(data)
-    plot_median_rent_YoY(df=formatted_data['Median Rent_YoY (%)'],
-                         cities=city)
-
-
-
