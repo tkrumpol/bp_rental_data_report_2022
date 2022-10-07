@@ -1,6 +1,8 @@
 # 2022 Rental Data Report | Top 100 Markets -- Analysis
 Downloadable [file](https://www.biggerpockets.com/files/user/leahd42/file/webinar-bonus-2022-rental-data) from Bigger Pockets website. 
 
+Working to create a notebook so users can enter and view information from any city they are interested in on the list. Currently created a class RentalData which will filter and plot the information from each sheet below on a single plot. Next update should be a notebook for better interaction.
+
 ## Data from January 2017 - February 2022
 Excel sheets with data for the top 100 markets in the US. A checkmark indicates I have reformatted that sheet. See below for more details on what has been done for each sheet. 
   - [x] Median Rent & Number of Listing
