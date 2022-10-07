@@ -50,6 +50,7 @@ from math import ceil, floor
 
 from utils import (read_data_from_excelfile, plot_median_rent_YoY,
                    format_data)
+from RentalData import RentalData
 from type_checking import is_list_type
 
 
@@ -115,7 +116,8 @@ def split_by_cities(multiindex_df: pd.DataFrame(), cities: list()
     return split_df
 
 
-def split_by_bedroom(multiindex_df: pd.DataFrame(), num_bedrooms: str()
+def split_by_bedroom(multiindex_df: pd.DataFrame(), 
+                     num_bedrooms: str()
                      ) -> pd.DataFrame():
     '''
     Split a multi indexed df (City, num bedrooms) by bedroom
@@ -141,7 +143,8 @@ def split_by_bedroom(multiindex_df: pd.DataFrame(), num_bedrooms: str()
     return split_df
 
 
-def split_by_cities_and_bedroom(multiindex_df: pd.DataFrame(), cities: list(),
+def split_by_cities_and_bedroom(multiindex_df: pd.DataFrame(), 
+                                cities: list(),
                                 num_bedrooms: str()) -> pd.DataFrame():
 
     '''
